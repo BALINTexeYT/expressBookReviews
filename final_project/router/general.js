@@ -90,4 +90,30 @@ publicUsers.get('/isbn/:isbn', async (req, res, next) => {
 publicUsers.get('/author/:author', async (req, res, next) => {
   try {
     const author = req.params.author.trim();
-    if (!author) return badReques
+    if (!author) return badRequest(res, 'Author is required.');
+    const result = await getBooks({ author });
+    return Object.keys(result).length ? res.json(result) : res.status(404).json({ message: 'No books found for this author.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+publicUsers.get('/title/:title', async (req, res, next) => {
+  try {
+    const title = req.params.title.trim();
+    if (!title) return badRequest(res, 'Title is required.');
+    const result = await getBooks({ title });
+    return Object.keys(result).length ? res.json(result) : res.status(404).json({ message: 'No books found with this title.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+publicUsers.get('/review/:isbn', (req, res) => {
+  const book = books[req.params.isbn];
+  if (!book) return res.status(404).json({ message: 'Book not found.' });
+  if (Object.keys(book.reviews).length === 0) return res.json({ message: 'No reviews found for this book.' });
+  return res.json(book.reviews);
+});
+
+module.exports = { general: publicUsers, startBookDataService, stopBookDataService };

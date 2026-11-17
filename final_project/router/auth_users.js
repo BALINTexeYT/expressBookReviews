@@ -34,4 +34,20 @@ regdUsers.put('/auth/review/:isbn', (req, res) => {
   if (!review) return res.status(400).json({ message: 'Review text is required.' });
   const username = req.user.username;
   book.reviews[username] = review;
-  return res.json({ message: 'Review added or updated successfully.', isbn: req.params.isbn, username, review }
+  return res.json({ message: 'Review added or updated successfully.', isbn: req.params.isbn, username, review });
+});
+
+regdUsers.delete('/auth/review/:isbn', (req, res) => {
+  const book = books[req.params.isbn];
+  if (!book) return res.status(404).json({ message: 'Book not found.' });
+  const username = req.user.username;
+  if (!Object.prototype.hasOwnProperty.call(book.reviews, username)) {
+    return res.status(404).json({ message: 'Your review was not found.' });
+  }
+  delete book.reviews[username];
+  return res.json({ message: 'Review deleted successfully.', isbn: req.params.isbn, username });
+});
+
+module.exports.authenticated = regdUsers;
+module.exports.isValid = isValid;
+module.exports.users = users;

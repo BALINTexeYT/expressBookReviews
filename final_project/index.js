@@ -47,4 +47,20 @@ app.use('/customer', customerRoutes);
 app.use('/', generalRoutes);
 
 app.use((err, req, res, next) => {
-  
+  if (res.headersSent) return next(err);
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ message: 'Invalid JSON request body.' });
+  }
+  return res.status(500).json({ message: 'Internal server error.' });
+});
+
+if (require.main === module) {
+  startBookDataService()
+    .then(() => app.listen(PORT, '0.0.0.0', () => console.log(`Server is running on port ${PORT}`)))
+    .catch((error) => {
+      console.error('Failed to start book data service:', error.message);
+      process.exitCode = 1;
+    });
+}
+
+module.exports = { app, jwtSecret };

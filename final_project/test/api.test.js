@@ -24,10 +24,10 @@ async function jsonRequest(path, options = {}) {
   return { response, body: await response.json() };
 }
 
-function postBody(data, cookie) {
+function postBody(data) {
   return {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...(cookie ? { cookie } : {}) },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify(data)
   };
 }
@@ -62,10 +62,34 @@ test('book search and session review ownership work end to end', async () => {
     const response = await fetch(`${baseUrl}/customer/login`, postBody({ username, password: 'test-password' }));
     const result = await response.json();
     assert.equal(response.status, 200);
-    return { cookie: response.headers.get('set-cookie').split(';')[0], ...result };
+    return response.headers.get('set-cookie').split(';')[0];
   }
 
-  const sessionA = await login(userA);
-  const sessionB = await login(userB);
-  for (const [sessionInfo, review] of [[sessionA, 'A review'], [sessionB, 'B review']]) {
-    const added = await jsonReque
+  const cookieA = await login(userA);
+  const cookieB = await login(userB);
+  for (const [cookie, review] of [[cookieA, 'A review'], [cookieB, 'B review']]) {
+    const added = await jsonRequest('/customer/auth/review/1', {
+      method: 'PUT',
+      headers: { cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ review })
+    });
+    assert.equal(added.response.status, 200);
+  }
+
+  const reviews = await jsonRequest('/review/1');
+  assert.equal(reviews.body[userA], 'A review');
+  assert.equal(reviews.body[userB], 'B review');
+
+  const deleteB = await jsonRequest('/customer/auth/review/1', {
+    method: 'DELETE', headers: { cookie: cookieB }
+  });
+  assert.equal(deleteB.response.status, 200);
+  const afterBDelete = await jsonRequest('/review/1');
+  assert.equal(afterBDelete.body[userA], 'A review');
+  assert.equal(Object.hasOwn(afterBDelete.body, userB), false);
+
+  const deleteA = await jsonRequest('/customer/auth/review/1', {
+    method: 'DELETE', headers: { cookie: cookieA }
+  });
+  assert.equal(deleteA.response.status, 200);
+});
