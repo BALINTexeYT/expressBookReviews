@@ -81,7 +81,7 @@ publicUsers.get('/isbn/:isbn', async (req, res, next) => {
   try {
     const result = await getBooks({ isbn: req.params.isbn.trim() });
     if (Object.keys(result).length === 0) return res.status(404).json({ message: 'Book not found.' });
-    return res.json(result);
+    return res.json(result[req.params.isbn.trim()]);
   } catch (error) {
     return next(error);
   }

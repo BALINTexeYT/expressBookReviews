@@ -39,6 +39,9 @@ test('book search and session review ownership work end to end', async () => {
 
   const title = await jsonRequest('/title/Divine%20Comedy');
   assert.equal(title.body['3'].author, 'Dante Alighieri');
+  const isbn = await jsonRequest('/isbn/1');
+  assert.equal(isbn.body.author, 'Chinua Achebe');
+  assert.equal(isbn.body.title, 'Things Fall Apart');
   const missingBook = await jsonRequest('/isbn/unknown');
   assert.equal(missingBook.response.status, 404);
 
